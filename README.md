@@ -3,7 +3,7 @@
 
 ### Purpose
 
-1. Kubernetes install Using Ansible and Vagrant
+ Kubernetes install Using Ansible and Vagrant
 
 ### Preparation
 
