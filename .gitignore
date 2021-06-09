@@ -2,3 +2,4 @@
 .vagrant/
 .env
 Vagrantfile
+/kubernetes-setup/join-command
