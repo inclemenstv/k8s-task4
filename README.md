@@ -8,7 +8,7 @@
 ### Preparation
 
 1. Pre-install Vagrant (https://www.vagrantup.com/docs/installation)
-4. Set your values to variables in the config.yaml
+4. Copy config.yaml.example and name config.yaml after set your values
 
 ### How to use
 
