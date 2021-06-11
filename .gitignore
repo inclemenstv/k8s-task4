@@ -2,3 +2,5 @@
 .vagrant/
 .env
 join.sh
+id_rsa
+id_rsa.pub
