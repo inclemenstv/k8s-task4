@@ -16,23 +16,23 @@ Vagrant.configure("2") do |config|
         v.cpus = VM_CPU
     end
 
-    config.vm.define "master" do |master|
-        master.vm.box = IMAGE_NAME
-        master.vm.network "private_network", ip: MASTER_IP
-        master.vm.hostname = "master"
-        master.vm.provision :shell, privileged: true, inline: $install_basic
-        master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP}, privileged: false, inline: $install_master
-
-    end
-
     config.vm.define "node" do |node|
        node.vm.box = IMAGE_NAME
        node.vm.network "private_network", ip: NODE_IP
        node.vm.hostname = "node"
        node.vm.provision :shell, privileged: true, inline: $install_basic
-       node.vm.provision :shell, env: {"NODE_IP" => NODE_IP}, privileged: true, inline: $install_node
 
   end
+
+    config.vm.define "master" do |master|
+        master.vm.box = IMAGE_NAME
+        master.vm.network "private_network", ip: MASTER_IP
+        master.vm.hostname = "master"
+        master.vm.provision :shell, privileged: true, inline: $install_basic
+        master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP,"NODE_IP" => NODE_IP}, privileged: false, inline: $install_master
+
+    end
+
 end
 
 $install_basic = <<-SCRIPT
@@ -97,9 +97,6 @@ sudo systemctl restart docker
 SCRIPT
 
 $install_master = <<-SCRIPT
-OUTPUT_FILE=/vagrant/join.sh
-OUTPUT_PUB_KEY=/vagrant/id_rsa.pub
-OUTPUT_PRIVATE_KEY=/vagrant/id_rsa
 
 echo "Creating cluster"
 sudo kubeadm init --apiserver-advertise-address=$MASTER_IP --pod-network-cidr=10.244.0.0/16
@@ -112,23 +109,16 @@ kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documen
 echo "set namespace"
 kubectl config set-context --current --namespace=kube-system
 echo "save join command"
-kubeadm token create --print-join-command > ${OUTPUT_FILE}
 
-echo "Creating ssh keys"
-ssh-keygen -q -N '' -f .ssh/id_rsa <<<y 2>&1 >/dev/null
+echo "install sshpass"
+sudo apt-get install sshpass -y
 
-cat .ssh/id_rsa.pub > ${OUTPUT_PUB_KEY}
-cat .ssh/id_rsa > ${OUTPUT_PRIVATE_KEY}
-SCRIPT
-
-$install_node = <<-SCRIPT
-echo "add ssh pub key to node"
-sudo cat /vagrant/id_rsa.pub >> .ssh/authorized_keys
-
-join=$(cat /vagrant/join.sh)
-ssh -tt -i /vagrant/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no vagrant@$NODE_IP << EOF
+echo "Adding worker node"
+join=$(kubeadm token create --print-join-command)
+sshpass -p vagrant ssh -tt -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no vagrant@$NODE_IP << EOF
 sudo $join
 exit
 EOF
+
 SCRIPT
 
