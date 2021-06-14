@@ -33,9 +33,9 @@ Vagrant.configure("2") do |config|
         master.vm.box = IMAGE_NAME
         master.vm.network "private_network", ip: MASTER_IP
         master.vm.hostname = "master"
-          master.vm.provider "virtualbox" do |v|
-        v.memory = MASTER_MEMORY
-        v.cpus = MASTER_CPU
+        master.vm.provider "virtualbox" do |v|
+         v.memory = MASTER_MEMORY
+         v.cpus = MASTER_CPU
     end
         master.vm.provision :shell, privileged: true, inline: $install_basic
         master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP,"NODE_IP" => NODE_IP}, privileged: false, inline: $install_master
