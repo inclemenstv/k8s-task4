@@ -5,22 +5,27 @@ IMAGE_NAME = config['k8s_SETTINGS']['IMAGE_NAME']
 MASTER_IP  = config['k8s_SETTINGS']['MASTER_IP']
 NODE_IP    = config['k8s_SETTINGS']['NODE_IP']
 
-VM_MEMORY  = config['VM_SETTINGS']['MEMORY']
-VM_CPU     = config['VM_SETTINGS']['CPU']
+MASTER_MEMORY  = config['VM_SETTINGS']['MASTER_MEMORY']
+MASTER_CPU     = config['VM_SETTINGS']['MASTER_CPU']
+
+NODE_MEMORY    = config['VM_SETTINGS']['NODE_MEMORY']
+NODE_CPU       = config['VM_SETTINGS']['NODE_CPU']
+
 
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
 
-    config.vm.provider "virtualbox" do |v|
-        v.memory = VM_MEMORY
-        v.cpus = VM_CPU
-    end
 
     config.vm.define "node" do |node|
        node.vm.box = IMAGE_NAME
        node.vm.network "private_network", ip: NODE_IP
        node.vm.hostname = "node"
+       node.vm.provider "virtualbox" do |v|
+        v.memory = NODE_MEMORY
+        v.cpus = NODE_CPU
+    end
        node.vm.provision :shell, privileged: true, inline: $install_basic
+
 
   end
 
@@ -28,6 +33,10 @@ Vagrant.configure("2") do |config|
         master.vm.box = IMAGE_NAME
         master.vm.network "private_network", ip: MASTER_IP
         master.vm.hostname = "master"
+          master.vm.provider "virtualbox" do |v|
+        v.memory = MASTER_MEMORY
+        v.cpus = MASTER_CPU
+    end
         master.vm.provision :shell, privileged: true, inline: $install_basic
         master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP,"NODE_IP" => NODE_IP}, privileged: false, inline: $install_master
 
