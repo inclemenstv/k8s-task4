@@ -25,6 +25,7 @@ Vagrant.configure("2") do |config|
         v.cpus = NODE_CPU
     end
        node.vm.provision :shell, privileged: true, inline: $install_basic
+       node.vm.provision :shell, env: {"NODE_IP" => NODE_IP}, privileged: true, inline: $setup_nodeIP
 
 
   end
@@ -39,6 +40,7 @@ Vagrant.configure("2") do |config|
     end
         master.vm.provision :shell, privileged: true, inline: $install_basic
         master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP,"NODE_IP" => NODE_IP}, privileged: false, inline: $install_master
+        master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP}, privileged: true, inline: $setup_masterIP
 
     end
 
@@ -106,22 +108,18 @@ sudo systemctl restart docker
 SCRIPT
 
 $install_master = <<-SCRIPT
-
 echo "Creating cluster"
 sudo kubeadm init --apiserver-advertise-address=$MASTER_IP --pod-network-cidr=10.244.0.0/16
-mkdir -p $HOME/.kube
-sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-sudo chown $(id -u):$(id -g) $HOME/.kube/config
+mkdir -p /home/vagrant/.kube
+sudo cp -i /etc/kubernetes/admin.conf /home/vagrant/.kube/config
+sudo chown $(id -u):$(id -g) /home/vagrant/.kube/config
 echo "install flannel"
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-
 echo "set namespace"
 kubectl config set-context --current --namespace=kube-system
 echo "save join command"
-
 echo "install sshpass"
 sudo apt-get install sshpass -y
-
 echo "Adding worker node"
 join=$(kubeadm token create --print-join-command)
 sshpass -p vagrant ssh -tt -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no vagrant@$NODE_IP << EOF
@@ -131,3 +129,17 @@ EOF
 
 SCRIPT
 
+
+$setup_nodeIP = <<-SCRIPT
+echo "Environment='KUBELET_EXTRA_ARGS=--node-ip=$NODE_IP'" >> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+sleep 20
+SCRIPT
+
+$setup_masterIP = <<-SCRIPT
+echo "Environment='KUBELET_EXTRA_ARGS=--node-ip=$MASTER_IP'" >> /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+sudo systemctl daemon-reload
+sudo systemctl restart kubelet
+sleep 20
+SCRIPT
