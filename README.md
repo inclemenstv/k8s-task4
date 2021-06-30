@@ -3,7 +3,7 @@
 
 ### Purpose
 
- Kubernetes install Using Vagrant
+install Kubernetes and private Docker registry using Vagrant
 
 ### Preparation
 
