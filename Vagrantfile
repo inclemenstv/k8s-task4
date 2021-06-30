@@ -131,7 +131,7 @@ sudo chown $(id -u):$(id -g) /home/vagrant/.kube/config
 echo "install flannel"
 kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 echo "set namespace"
-kubectl config set-context --current --namespace=kube-system
+kubectl config set-context --current --namespace=default
 echo "save join command"
 echo "install sshpass"
 sudo apt-get install sshpass -y
@@ -236,22 +236,6 @@ cd /home/vagrant/registry
 sudo docker build -t local-registry .
 
 echo "run registry"
-sudo docker run -d -p 5000:5000 --name registry local-registry
+sudo docker run -d -p 5000:5000 --name registry --restart always local-registry
 SCRIPT
 
-# echo "install sshpass"
-# sudo apt-get install sshpass -y
-# echo "Adding ca.crt key to worker node"
-# add_key=$(cat /home/vagrant/registry/registry.crt)
-# sshpass -p vagrant ssh -tt -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no vagrant@$NODE_IP << EOF
-# sudo mkdir -p "/etc/docker/certs.d/$REGISTRY_IP:5000"
-# sudo $add_key > /etc/docker/certs.d/$REGISTRY_IP:5000/ca.crt
-# exit
-# EOF
-#
-# echo "Adding ca.crt key to master node"
-# sshpass -p vagrant ssh -tt -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no vagrant@$MASTER_IP << EOF
-# sudo mkdir -p "/etc/docker/certs.d/$REGISTRY_IP:5000"
-# sudo $add_key > /etc/docker/certs.d/$REGISTRY_IP:5000/ca.crt
-# exit
-# EOF
