@@ -23,7 +23,7 @@ install Kubernetes and private Docker registry using Vagrant
   - sudo mkdir -p /etc/docker/certs.d/192.168.20.10:5000
   - sudo nano /etc/docker/certs.d/192.168.20.10\:5000/ca.crt and copy past key from /registry/ca.crt
 4. In Jenkins dashboard use job webApp 
-5. After web application delpoyed, you need to create database and table in Mysql Conteiner
+5. After the web application has deploy l you need to create a database and table in Mysql Container
   - ssh vagrant master
   - kubectl get pods
   - kubectl exec -it container_name -- mysql -uroot -padmin
