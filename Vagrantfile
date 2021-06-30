@@ -20,32 +20,6 @@ REGISTRY_HOST    = config['Docker_registry']['HOST']
 Vagrant.configure("2") do |config|
     config.ssh.insert_key = false
 
-
-    config.vm.define "node" do |node|
-       node.vm.box = IMAGE_NAME
-       node.vm.network "private_network", ip: NODE_IP
-       node.vm.hostname = "node"
-       node.vm.provider "virtualbox" do |v|
-        v.memory = NODE_MEMORY
-        v.cpus = NODE_CPU
-    end
-       node.vm.provision :shell, privileged: true, inline: $install_basic
-       node.vm.provision :shell, env: {"NODE_IP" => NODE_IP}, privileged: true, inline: $setup_nodeIP
-  end
-
-    config.vm.define "master" do |master|
-        master.vm.box = IMAGE_NAME
-        master.vm.network "private_network", ip: MASTER_IP
-        master.vm.hostname = "master"
-        master.vm.provider "virtualbox" do |v|
-         v.memory = MASTER_MEMORY
-         v.cpus = MASTER_CPU
-    end
-        master.vm.provision :shell, privileged: true, inline: $install_basic
-        master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP,"NODE_IP" => NODE_IP}, privileged: false, inline: $install_master
-        master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP}, privileged: true, inline: $setup_masterIP
-    end
-
     config.vm.define "docker_registry" do |docker|
        docker.vm.box = IMAGE_NAME
        docker.vm.network "private_network", ip: REGISTRY_IP
@@ -58,6 +32,30 @@ Vagrant.configure("2") do |config|
        docker.vm.provision :shell, env: {"REGISTRY_IP" => REGISTRY_IP, "USER_NAME" => USER_NAME, "USER_PASSWORD" => USER_PASSWORD, "REGISTRY_HOST" => REGISTRY_HOST }, privileged: true, inline: $config_registry
 end
 
+    config.vm.define "node" do |node|
+       node.vm.box = IMAGE_NAME
+       node.vm.network "private_network", ip: NODE_IP
+       node.vm.hostname = "node"
+       node.vm.provider "virtualbox" do |v|
+        v.memory = NODE_MEMORY
+        v.cpus = NODE_CPU
+    end
+       node.vm.provision :shell, privileged: true, inline: $install_basic
+       node.vm.provision :shell, env: {"NODE_IP" => NODE_IP,"REGISTRY_IP" => REGISTRY_IP}, privileged: true, inline: $setup_nodeIP
+  end
+
+    config.vm.define "master" do |master|
+        master.vm.box = IMAGE_NAME
+        master.vm.network "private_network", ip: MASTER_IP
+        master.vm.hostname = "master"
+        master.vm.provider "virtualbox" do |v|
+         v.memory = MASTER_MEMORY
+         v.cpus = MASTER_CPU
+    end
+        master.vm.provision :shell, privileged: true, inline: $install_basic
+        master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP,"NODE_IP" => NODE_IP}, privileged: false, inline: $install_master
+        master.vm.provision :shell, env: {"MASTER_IP" => MASTER_IP,"REGISTRY_IP" => REGISTRY_IP}, privileged: true, inline: $setup_masterIP
+    end
 
 end
 
@@ -152,6 +150,11 @@ echo "Environment='KUBELET_EXTRA_ARGS=--node-ip=$NODE_IP'" >> /etc/systemd/syste
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 sleep 20
+
+echo "adding ca.crt"
+sudo mkdir -p "/etc/docker/certs.d/$REGISTRY_IP:5000"
+sudo cat /vagrant/registry/ca.crt > /etc/docker/certs.d/$REGISTRY_IP:5000/ca.crt
+
 SCRIPT
 
 $setup_masterIP = <<-SCRIPT
@@ -159,6 +162,11 @@ echo "Environment='KUBELET_EXTRA_ARGS=--node-ip=$MASTER_IP'" >> /etc/systemd/sys
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 sleep 20
+
+echo "adding ca.crt"
+sudo mkdir -p "/etc/docker/certs.d/$REGISTRY_IP:5000"
+sudo cat /vagrant/registry/ca.crt > /etc/docker/certs.d/$REGISTRY_IP:5000/ca.crt
+
 SCRIPT
 
 
@@ -231,5 +239,19 @@ echo "run registry"
 sudo docker run -d -p 5000:5000 --name registry local-registry
 SCRIPT
 
-
-
+# echo "install sshpass"
+# sudo apt-get install sshpass -y
+# echo "Adding ca.crt key to worker node"
+# add_key=$(cat /home/vagrant/registry/registry.crt)
+# sshpass -p vagrant ssh -tt -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no vagrant@$NODE_IP << EOF
+# sudo mkdir -p "/etc/docker/certs.d/$REGISTRY_IP:5000"
+# sudo $add_key > /etc/docker/certs.d/$REGISTRY_IP:5000/ca.crt
+# exit
+# EOF
+#
+# echo "Adding ca.crt key to master node"
+# sshpass -p vagrant ssh -tt -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no vagrant@$MASTER_IP << EOF
+# sudo mkdir -p "/etc/docker/certs.d/$REGISTRY_IP:5000"
+# sudo $add_key > /etc/docker/certs.d/$REGISTRY_IP:5000/ca.crt
+# exit
+# EOF
