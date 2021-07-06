@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><flow-definition>
+    <actions/>
+    <description>$JOB_NAME</description>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <EnvInjectJobProperty>
+            <on>true</on>
+            <info>
+                <propertiesContent>BRANCH=main</propertiesContent>
+            </info>
+        </EnvInjectJobProperty>
+        <org.jenkinsci.plugins.workflow.job.properties.DisableConcurrentBuildsJobProperty/>
+    </properties>
+    <triggers/>
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition">
+        <scriptPath>Jenkinsfile</scriptPath>
+        <lightweight>false</lightweight>
+        <scm class="hudson.plugins.git.GitSCM">
+            <userRemoteConfigs>
+                <hudson.plugins.git.UserRemoteConfig>
+                    <url>$GIT_URL</url>
+                </hudson.plugins.git.UserRemoteConfig>
+            </userRemoteConfigs>
+            <branches>
+                <hudson.plugins.git.BranchSpec>
+                    <name>*/main</name>
+                </hudson.plugins.git.BranchSpec>
+            </branches>
+            <configVersion>2</configVersion>
+            <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+            <gitTool>Default</gitTool>
+        </scm>
+    </definition>
+</flow-definition>

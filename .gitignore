@@ -6,3 +6,12 @@ id_rsa
 id_rsa.pub
 config.yaml
 /registry/ca.crt
+/Jenkins/.vagrant
+/Jenkins/credential.xml
+/Jenkins/.env
+/Jenkins/config.txt
+/Jenkins/job_config.xml
+/Jenkins/Vagrantfile
+/Jenkins//groovy_scripts/init_script.groovy
+/Jenkins//ssh_keys/id_rsa
+/Jenkins//ssh_keys/id_rsa.pub

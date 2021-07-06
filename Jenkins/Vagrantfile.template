@@ -1,0 +1,25 @@
+Vagrant.configure("2") do |config|
+
+#jenkins vm
+  config.vm.define "jenkins" do |jenkins|
+  jenkins.vm.box = "bento/ubuntu-20.04"
+  jenkins.vm.define "jenkins"
+  jenkins.vm.hostname = "jenkins"
+  jenkins.vm.network "private_network", ip: "$JENKINS_HOST"
+  jenkins.vm.provider "virtualbox" do |vb|
+    vb.gui = false
+    vb.cpus = $JENKINS_VM_CPU
+    vb.memory = $JENKINS_VM_MEMORY
+  end
+  jenkins.vm.provision "shell" do |shell|
+    shell.path = "jenkins_install.sh"
+  end
+  jenkins.vm.provision "shell" do |shell|
+    shell.path = "docker_install.sh"
+  end
+  end
+
+
+end
+
+
